@@ -257,8 +257,8 @@ class WordConverter(BaseConverter):
                     except Exception as img_error:
                         logger.error(f"Error adding image to Word: {img_error}")
                         return f"\n**[Mermaid Diagram]**\n\n*Image could not be added to Word.*\n\n"
-                    else:
-                        return f"\n**[Mermaid Diagram]**\n\n*Failed to render diagram.*\n\n"
+                else:
+                    return f"\n**[Mermaid Diagram]**\n\n*Failed to render diagram.*\n\n"
             
             # Replace Mermaid blocks with rendered images
             content = re.sub(mermaid_pattern, replace_mermaid, content, flags=re.DOTALL)
@@ -332,8 +332,7 @@ class WordConverter(BaseConverter):
             header_text = config.get_header_text()
             
             # Create header paragraph
-            header = doc.sections[0].header
-            header_paragraph = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+            header_paragraph = doc.sections[0].header.paragraphs[0]
             header_paragraph.text = header_text
             
             # Apply header formatting
@@ -357,8 +356,7 @@ class WordConverter(BaseConverter):
             footer_text = config.get_footer_text()
             
             # Create footer paragraph
-            footer = doc.sections[0].footer
-            footer_paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+            footer_paragraph = doc.sections[0].footer.paragraphs[0]
             footer_paragraph.text = footer_text
             
             # Apply footer formatting
@@ -526,8 +524,11 @@ class PDFConverter(BaseConverter):
             return False
         
         try:
-            # Create PDF document (simplified for now)
-            doc = SimpleDocTemplate(str(output_path), pagesize=A4)
+            # Create PDF document with header/footer
+            if HEADER_FOOTER_AVAILABLE:
+                doc = self._create_pdf_with_header_footer(str(output_path))
+            else:
+                doc = SimpleDocTemplate(str(output_path), pagesize=A4)
             
             story = []
             
