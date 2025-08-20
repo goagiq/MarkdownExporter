@@ -1,0 +1,29 @@
+# Header and Footer Configuration
+# This file contains settings for document headers and footers
+
+header:
+  text: "GoAGI"
+  font_size: 10
+  font_name: "Arial"
+  alignment: "center"  # left, center, right
+  color: "#333333"
+  bold: false
+  italic: false
+
+footer:
+  text: "Copyright (c) 2025 GoAGI All rights reserved."
+  font_size: 9
+  font_name: "Arial"
+  alignment: "center"  # left, center, right
+  color: "#666666"
+  bold: false
+  italic: false
+
+# Page settings
+page:
+  margin_top: 1.0      # inches
+  margin_bottom: 1.0   # inches
+  margin_left: 1.0     # inches
+  margin_right: 1.0    # inches
+  header_distance: 0.5 # inches from top
+  footer_distance: 0.5 # inches from bottom

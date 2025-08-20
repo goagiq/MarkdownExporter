@@ -9,6 +9,13 @@ import tempfile
 import subprocess
 import logging
 
+# Import header/footer configuration
+try:
+    from src.config.header_footer_config import HeaderFooterConfig
+    HEADER_FOOTER_AVAILABLE = True
+except ImportError:
+    HEADER_FOOTER_AVAILABLE = False
+
 # Import conversion libraries
 try:
     import docx
@@ -220,6 +227,10 @@ class WordConverter(BaseConverter):
             # Create Word document
             doc = Document()
             
+            # Add header and footer if configuration is available
+            if HEADER_FOOTER_AVAILABLE:
+                self._add_header_footer(doc)
+            
             # Clean file structure diagrams first
             content = clean_file_structure(content)
             
@@ -306,6 +317,68 @@ class WordConverter(BaseConverter):
         except Exception as e:
             logger.error(f"Error converting markdown to Word: {e}")
             return False
+    
+    def _add_header_footer(self, doc: Document) -> None:
+        """Add header and footer to Word document.
+        
+        Args:
+            doc: Word document to add header/footer to
+        """
+        try:
+            config = HeaderFooterConfig()
+            
+            # Add header
+            header_config = config.get_header_config()
+            header_text = config.get_header_text()
+            
+            # Create header paragraph
+            header_paragraph = doc.sections[0].header.paragraphs[0]
+            header_paragraph.text = header_text
+            
+            # Apply header formatting
+            header_run = header_paragraph.runs[0]
+            header_run.font.name = header_config.get("font_name", "Arial")
+            header_run.font.size = Pt(header_config.get("font_size", 10))
+            header_run.font.bold = header_config.get("bold", False)
+            header_run.font.italic = header_config.get("italic", False)
+            
+            # Set alignment
+            alignment = header_config.get("alignment", "center")
+            if alignment == "center":
+                header_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            elif alignment == "right":
+                header_paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            else:
+                header_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            
+            # Add footer
+            footer_config = config.get_footer_config()
+            footer_text = config.get_footer_text()
+            
+            # Create footer paragraph
+            footer_paragraph = doc.sections[0].footer.paragraphs[0]
+            footer_paragraph.text = footer_text
+            
+            # Apply footer formatting
+            footer_run = footer_paragraph.runs[0]
+            footer_run.font.name = footer_config.get("font_name", "Arial")
+            footer_run.font.size = Pt(footer_config.get("font_size", 9))
+            footer_run.font.bold = footer_config.get("bold", False)
+            footer_run.font.italic = footer_config.get("italic", False)
+            
+            # Set alignment
+            alignment = footer_config.get("alignment", "center")
+            if alignment == "center":
+                footer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            elif alignment == "right":
+                footer_paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            else:
+                footer_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            
+            logger.info("✅ Added header and footer to Word document")
+            
+        except Exception as e:
+            logger.error(f"Error adding header/footer to Word: {e}")
     
     def _parse_table(self, lines: list, start_index: int) -> Optional[list]:
         """Parse table from markdown lines.
@@ -451,8 +524,12 @@ class PDFConverter(BaseConverter):
             return False
         
         try:
-            # Create PDF document
-            doc = SimpleDocTemplate(str(output_path), pagesize=A4)
+            # Create PDF document with header/footer
+            if HEADER_FOOTER_AVAILABLE:
+                doc = self._create_pdf_with_header_footer(str(output_path))
+            else:
+                doc = SimpleDocTemplate(str(output_path), pagesize=A4)
+            
             story = []
             
             # Get default styles
@@ -598,7 +675,86 @@ class PDFConverter(BaseConverter):
             
         except Exception as e:
             logger.error(f"Error converting markdown to PDF: {e}")
-        return False
+            return False
+    
+    def _create_pdf_with_header_footer(self, output_path: str) -> SimpleDocTemplate:
+        """Create PDF document with header and footer.
+        
+        Args:
+            output_path: Output file path
+            
+        Returns:
+            SimpleDocTemplate with header/footer
+        """
+        try:
+            config = HeaderFooterConfig()
+            page_config = config.get_page_config()
+            
+            # Create custom page template with header/footer
+            from reportlab.platypus import PageTemplate, Frame
+            from reportlab.lib.units import inch
+            
+            # Define page margins
+            margin_top = page_config.get("margin_top", 1.0) * inch
+            margin_bottom = page_config.get("margin_bottom", 1.0) * inch
+            margin_left = page_config.get("margin_left", 1.0) * inch
+            margin_right = page_config.get("margin_right", 1.0) * inch
+            
+            # Create frame for content
+            frame = Frame(
+                margin_left, margin_bottom,
+                A4[0] - margin_left - margin_right,
+                A4[1] - margin_top - margin_bottom,
+                id='normal'
+            )
+            
+            # Create page template with header/footer
+            def header_footer(canvas, doc):
+                # Add header
+                header_config = config.get_header_config()
+                header_text = config.get_header_text()
+                
+                canvas.saveState()
+                canvas.setFont(header_config.get("font_name", "Helvetica"), 
+                              header_config.get("font_size", 10))
+                canvas.setFillColor(header_config.get("color", "#333333"))
+                
+                # Position header
+                header_y = A4[1] - margin_top + 0.2 * inch
+                canvas.drawCentredString(A4[0]/2, header_y, header_text)
+                
+                # Add footer
+                footer_config = config.get_footer_config()
+                footer_text = config.get_footer_text()
+                
+                canvas.setFont(footer_config.get("font_name", "Helvetica"), 
+                              footer_config.get("font_size", 9))
+                canvas.setFillColor(footer_config.get("color", "#666666"))
+                
+                # Position footer
+                footer_y = margin_bottom - 0.2 * inch
+                canvas.drawCentredString(A4[0]/2, footer_y, footer_text)
+                
+                canvas.restoreState()
+            
+            # Create page template
+            page_template = PageTemplate(
+                id='header_footer',
+                frames=[frame],
+                onPage=header_footer
+            )
+            
+            # Create document with template
+            doc = SimpleDocTemplate(output_path, pagesize=A4)
+            doc.addPageTemplates([page_template])
+            
+            logger.info("✅ Created PDF document with header and footer")
+            return doc
+            
+        except Exception as e:
+            logger.error(f"Error creating PDF with header/footer: {e}")
+            # Fallback to simple document
+            return SimpleDocTemplate(output_path, pagesize=A4)
 
 
 class HTMLConverter(BaseConverter):
