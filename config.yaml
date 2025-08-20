@@ -1,0 +1,25 @@
+# Markdown Exporter Configuration
+
+server:
+  mcp_port: 8500
+  api_port: 8001
+  ollama_host: "http://localhost:11434"
+  ollama_model: "llama3"
+
+conversion:
+  default_format: "word"
+  enable_mermaid: true
+  enable_images: true
+  table_alignment: "left"
+  remove_unicode: true
+  remove_emoji: true
+
+logging:
+  level: "INFO"
+  format: "json"
+  output: "stdout"
+
+security:
+  allowed_extensions: [".md", ".markdown"]
+  max_file_size: "10MB"
+  validate_file_types: true

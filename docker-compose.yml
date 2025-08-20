@@ -1,0 +1,68 @@
+version: '3.8'
+
+# Markdown Exporter Docker Compose Configuration
+# 
+# Available endpoints when running:
+# - http://localhost:8001/docs - FastAPI documentation and interactive API explorer
+# - http://localhost:8001/mcp - MCP (Model Context Protocol) server endpoint
+# - http://localhost:8001/ - Root endpoint with health check
+#
+# MCP Tools available:
+# - convert_markdown_to_word - Convert markdown to Word (.docx)
+# - convert_markdown_to_pdf - Convert markdown to PDF
+# - convert_markdown_to_html - Convert markdown to HTML with embedded images
+# - get_summary - Get webpage summary
+
+services:
+  markdownexporter:
+    build: .
+    container_name: markdownexporter
+    ports:
+      - "8001:8001"  # API, MCP server, and docs
+    volumes:
+      # Configuration and source files
+      - ./config.yaml:/app/config.yaml:ro
+      # Output directories (persistent across container restarts)
+      - ./results:/app/results          # Generated documents and images
+      - ./output:/app/output            # Additional output files
+      - ./temp:/app/temp                # Temporary processing files
+    environment:
+      - PYTHONPATH=/app
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - OLLAMA_MODEL=llama3
+      - LOG_LEVEL=INFO
+      - MCP_PORT=8001
+      - API_PORT=8001
+    networks:
+      - markdownexporter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command: python simple_mcp_server.py
+    # depends_on:
+    #   - ollama
+
+  # Optional: Include Ollama service if you want to run it in Docker
+  # Uncomment the following service if you want to run Ollama in Docker
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   networks:
+  #     - markdownexporter-network
+  #   restart: unless-stopped
+
+networks:
+  markdownexporter-network:
+    driver: bridge
+
+# Uncomment if using Ollama in Docker
+# volumes:
+#   ollama_data:
