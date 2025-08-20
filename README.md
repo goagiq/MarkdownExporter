@@ -8,6 +8,7 @@ A comprehensive solution that converts markdown files to PDF, Word, and HTML for
 - **✅ Word Conversion**: Clean .docx files with proper formatting (no HTML tags)
 - **✅ PDF Conversion**: Professional PDFs with readable file structures
 - **✅ HTML Conversion**: Clean HTML with embedded Mermaid diagrams as images
+- **✅ Header & Footer**: Customizable headers and footers for Word and PDF documents
 - **✅ Mermaid Diagrams**: Rendered as images in Word, PDF, and HTML formats
 - **✅ Text Formatting**: Bold, italic, code, and hyperlinks properly handled
 - **✅ File Structure**: Clean indentation and readable directory trees
@@ -584,6 +585,48 @@ docker-compose up -d
 - **Phase 5: Docker and Deployment**
 - **Phase 6: Advanced Testing Suite**
 - **Phase 7: Performance Optimization**
+
+## 📄 Header & Footer Configuration
+
+The Markdown Exporter supports customizable headers and footers for Word and PDF documents. Configuration is managed through `config/header_footer.yaml`.
+
+### Configuration File
+
+```yaml
+# config/header_footer.yaml
+header:
+  text: "GoAGI"
+  font_size: 10
+  font_name: "Arial"
+  alignment: "center"  # left, center, right
+  color: "#333333"
+  bold: false
+  italic: false
+
+footer:
+  text: "Copyright (c) 2025 GoAGI All rights reserved."
+  font_size: 9
+  font_name: "Arial"
+  alignment: "center"  # left, center, right
+  color: "#666666"
+  bold: false
+  italic: false
+
+page:
+  margin_top: 1.0      # inches
+  margin_bottom: 1.0   # inches
+  margin_left: 1.0     # inches
+  margin_right: 1.0    # inches
+  header_distance: 0.5 # inches from top
+  footer_distance: 0.5 # inches from bottom
+```
+
+### Features
+
+- **Word Documents**: Headers and footers applied to all pages with proper formatting
+- **PDF Documents**: Custom page templates with headers and footers on every page
+- **Configurable**: Font, size, color, alignment, and positioning
+- **Fallback**: Graceful fallback to default settings if configuration is missing
 
 ## 🛠️ Troubleshooting
 
