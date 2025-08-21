@@ -8,6 +8,7 @@ import os
 import tempfile
 import subprocess
 import logging
+import json
 
 # Import header/footer configuration
 try:
@@ -53,6 +54,8 @@ def render_mermaid_diagram(mermaid_code: str, output_dir: str) -> str:
         # Try to find mmdc in common locations
         mmdc_paths = [
             'mmdc',  # Try system PATH first
+            '/usr/local/bin/mmdc',  # Global npm (Linux)
+            '/usr/bin/mmdc',  # System install (Linux)
             'C:\\Users\\sovan\\AppData\\Roaming\\npm\\mmdc.cmd',  # Global npm (Windows)
             'C:\\Users\\sovan\\AppData\\Roaming\\npm\\mmdc.exe',  # Global npm (Windows exe)
             os.path.join('.venv', 'Scripts', 'mmdc'),  # Virtual env
@@ -74,18 +77,40 @@ def render_mermaid_diagram(mermaid_code: str, output_dir: str) -> str:
             mmdc_path,
             '-i', mermaid_file,
             '-o', output_file,
-            '-b', 'transparent'
+            '-b', 'transparent',
+            '--puppeteerConfigFile', 'puppeteer-config.json'
         ]
         
+        # Create Puppeteer config for Docker environment
+        puppeteer_config = {
+            "args": [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-accelerated-2d-canvas",
+                "--no-first-run",
+                "--no-zygote",
+                "--single-process",
+                "--disable-gpu"
+            ]
+        }
+        
+        with open('puppeteer-config.json', 'w') as f:
+            json.dump(puppeteer_config, f)
+        
+        logger.info(f"Running mmdc command: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
         
         # Clean up temporary file
         os.unlink(mermaid_file)
         
         if result.returncode == 0 and os.path.exists(output_file):
+            logger.info(f"✅ Successfully rendered Mermaid diagram: {output_file}")
             return output_file
         else:
-            logger.warning(f"Failed to render Mermaid diagram: {result.stderr}")
+            logger.warning(f"❌ Failed to render Mermaid diagram: {result.stderr}")
+            logger.warning(f"Command output: {result.stdout}")
+            logger.warning(f"Return code: {result.returncode}")
             return None
             
     except Exception as e:

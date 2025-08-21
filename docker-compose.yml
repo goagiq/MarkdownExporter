@@ -2,23 +2,26 @@ version: '3.8'
 
 # Markdown Exporter Docker Compose Configuration
 # 
-# Available endpoints when running:
-# - http://localhost:8001/docs - FastAPI documentation and interactive API explorer
-# - http://localhost:8001/mcp - MCP (Model Context Protocol) server endpoint
-# - http://localhost:8001/ - Root endpoint with health check
+# Available endpoints when running (bound to localhost only):
+# - http://127.0.0.1:8001/docs - FastAPI documentation and interactive API explorer
+# - http://127.0.0.1:8001/mcp - MCP (Model Context Protocol) server endpoint
+# - http://127.0.0.1:8001/ - Root endpoint with health check
+# - http://127.0.0.1:8001/health/ - Health check endpoint
 #
 # MCP Tools available:
 # - convert_markdown_to_word - Convert markdown to Word (.docx)
 # - convert_markdown_to_pdf - Convert markdown to PDF
 # - convert_markdown_to_html - Convert markdown to HTML with embedded images
 # - get_summary - Get webpage summary
+#
+# Security Note: Services are bound to 127.0.0.1 (localhost only) for security
 
 services:
   markdownexporter:
     build: .
     container_name: markdownexporter
     ports:
-      - "8001:8001"  # API, MCP server, and docs
+      - "127.0.0.1:8001:8001"  # API, MCP server, and docs - bound to localhost only
     volumes:
       # Configuration and source files
       - ./config.yaml:/app/config.yaml:ro
@@ -37,7 +40,7 @@ services:
       - markdownexporter-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/docs"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/docs && curl -f http://localhost:8001/health/"]
       interval: 30s
       timeout: 10s
       retries: 3

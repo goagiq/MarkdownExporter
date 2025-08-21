@@ -193,10 +193,12 @@ async def handle_mcp_request(request: Request):
                             f.write(word_bytes)
                         
                         # Clean up temp file
-                        temp_file.unlink()
+                        if temp_file.exists():
+                            temp_file.unlink()
                         
                         import base64
                         word_b64 = base64.b64encode(word_bytes).decode('utf-8')
+                        logger.info(f"✅ Word conversion successful: {results_file} ({len(word_bytes)} bytes)")
                         result = {
                             "content": [
                                 {
@@ -251,10 +253,12 @@ async def handle_mcp_request(request: Request):
                             f.write(pdf_bytes)
                         
                         # Clean up temp file
-                        temp_file.unlink()
+                        if temp_file.exists():
+                            temp_file.unlink()
                         
                         import base64
                         pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
+                        logger.info(f"✅ PDF conversion successful: {results_file} ({len(pdf_bytes)} bytes)")
                         result = {
                             "content": [
                                 {
@@ -309,8 +313,10 @@ async def handle_mcp_request(request: Request):
                             f.write(html_content)
                         
                         # Clean up temp file
-                        temp_file.unlink()
+                        if temp_file.exists():
+                            temp_file.unlink()
                         
+                        logger.info(f"✅ HTML conversion successful: {results_file} ({len(html_content)} characters)")
                         result = {
                             "content": [
                                 {
